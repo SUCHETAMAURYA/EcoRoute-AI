@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoRoute AI - Smart Sustainable Routing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .route-input h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .results h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .route-options {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .route-option {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .route-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .route-option.recommended {
+            border-color: #10b981;
+            background: linear-gradient(45deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+        }
+
+        .route-option.recommended::before {
+            content: "🌱 RECOMMENDED";
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .route-title {
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .route-time {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .route-metrics {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 6px;
+            min-width: 70px;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .metric-label {
+            font-size: 0.8em;
+            color: #718096;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .dashboard-card h4 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #718096;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #10b981, #34d399);
+            transition: width 0.8s ease;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 EcoRoute AI</h1>
+            <p>Smart Routing for Sustainable Urban Mobility</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card route-input">
+                <h3>🚗 Plan Your Eco-Friendly Route</h3>
+                <div class="input-group">
+                    <div class="input-row">
+                        <input type="text" id="origin" placeholder="From (e.g., Downtown Mall)">
+                        <input type="text" id="destination" placeholder="To (e.g., Business District)">
+                    </div>
+                    <div class="input-row">
+                        <select id="transport-mode">
+                            <option value="car">🚗 Car</option>
+                            <option value="bike">🚴 Bike</option>
+                            <option value="walk">🚶 Walk</option>
+                            <option value="transit">🚌 Public Transit</option>
+                        </select>
+                        <select id="priority">
+                            <option value="eco">🌱 Eco-Friendly</option>
+                            <option value="safe">🛡️ Safety First</option>
+                            <option value="balanced">⚖️ Balanced</option>
+                            <option value="fast">⚡ Fastest</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="generateRoutes()">Find Smart Routes</button>
+            </div>
+
+            <div class="card results">
+                <h3>📍 Route Recommendations</h3>
+                <div class="loading" id="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Analyzing traffic, pollution, and safety data...</p>
+                </div>
+                <div class="route-options" id="route-options"></div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="dashboard-card">
+                <h4>🌍 Environmental Impact</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="carbon-saved">0</div>
+                        <div class="stat-label">kg CO₂ Saved</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="pollution-avoided">0</div>
+                        <div class="stat-label">Air Quality Score</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="eco-progress" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h4>🛡️ Safety Analytics</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="safety-score">0</div>
+                        <div class="stat-label">Safety Score</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="accident-risk">0</div>
+                        <div class="stat-label">Risk Level</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="safety-progress" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h4>📊 Route Analytics</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-routes">0</div>
+                        <div class="stat-label">Routes Analyzed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avg-improvement">0%</div>
+                        <div class="stat-label">Avg Improvement</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="analytics-progress" style="width: 60%"></div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h4>🚦 Real-time Data</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="traffic-status">Good</div>
+                        <div class="stat-label">Traffic Flow</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="weather-impact">Low</div>
+                        <div class="stat-label">Weather Impact</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="realtime-progress" style="width: 75%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const routeTemplates = [
+            {
+                name: "EcoRoute Optimal",
+                type: "eco",
+                baseTime: 25,
+                carbonSaving: 2.3,
+                safetyScore: 85,
+                airQuality: 92,
+                description: "Avoids high-pollution areas and traffic congestion"
+            },
+            {
+                name: "Safety Priority",
+                type: "safe", 
+                baseTime: 28,
+                carbonSaving: 1.8,
+                safetyScore: 95,
+                airQuality: 88,
+                description: "Uses well-lit streets with low accident history"
+            },
+            {
+                name: "Balanced Route",
+                type: "balanced",
+                baseTime: 22,
+                carbonSaving: 1.5,
+                safetyScore: 78,
+                airQuality: 85,
+                description: "Optimizes for time, safety, and environmental impact"
+            },
+            {
+                name: "Traditional Route",
+                type: "traditional",
+                baseTime: 20,
+                carbonSaving: 0.5,
+                safetyScore: 65,
+                airQuality: 72,
+                description: "Standard fastest route without optimization"
+            }
+        ];
+
+        function generateRoutes() {
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+
+            if (!origin || !destination) {
+                alert('Please enter both origin and destination');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('route-options').style.display = 'none';
+
+            setTimeout(() => {
+                const routes = generateRouteOptions();
+                displayRoutes(routes);
+                updateDashboard(routes);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('route-options').style.display = 'flex';
+            }, 2000);
+        }
+
+        function generateRouteOptions() {
+            const transportMode = document.getElementById('transport-mode').value;
+            const priority = document.getElementById('priority').value;
+
+            const routes = routeTemplates.map(template => {
+                const route = {...template};
+                
+                const modeMultipliers = {
+                    car: 1,
+                    bike: 2.5,
+                    walk: 8,
+                    transit: 1.8
+                };
+                
+                route.time = Math.round(route.baseTime * modeMultipliers[transportMode]);
+                route.distance = Math.round(route.baseTime * 0.8);
+                
+                route.time += Math.round((Math.random() - 0.5) * 6);
+                route.carbonSaving += (Math.random() - 0.5) * 0.5;
+                route.safetyScore += Math.round((Math.random() - 0.5) * 10);
+                route.airQuality += Math.round((Math.random() - 0.5) * 8);
+                
+                route.safetyScore = Math.max(0, Math.min(100, route.safetyScore));
+                route.airQuality = Math.max(0, Math.min(100, route.airQuality));
+                route.carbonSaving = Math.max(0, route.carbonSaving);
+                
+                return route;
+            });
+
+            if (priority === 'eco') {
+                routes.sort((a, b) => b.carbonSaving - a.carbonSaving);
+            } else if (priority === 'safe') {
+                routes.sort((a, b) => b.safetyScore - a.safetyScore);
+            } else if (priority === 'fast') {
+                routes.sort((a, b) => a.time - b.time);
+            }
+
+            return routes;
+        }
+
+        function displayRoutes(routes) {
+            const container = document.getElementById('route-options');
+            container.innerHTML = '';
+
+            routes.forEach((route, index) => {
+                const routeElement = document.createElement('div');
+                routeElement.className = `route-option ${index === 0 ? 'recommended' : ''}`;
+                
+                routeElement.innerHTML = `
+                    <div class="route-header">
+                        <div class="route-title">${route.name}</div>
+                        <div class="route-time">${route.time} min</div>
+                    </div>
+                    <div style="color: #718096; margin-bottom: 10px;">${route.description}</div>
+                    <div class="route-metrics">
+                        <div class="metric">
+                            <div class="metric-value">${route.distance} km</div>
+                            <div class="metric-label">Distance</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${route.carbonSaving.toFixed(1)}</div>
+                            <div class="metric-label">CO₂ Saved</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${route.safetyScore}</div>
+                            <div class="metric-label">Safety</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${route.airQuality}</div>
+                            <div class="metric-label">Air Quality</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(routeElement);
+            });
+        }
+
+        function updateDashboard(routes) {
+            const totalCarbonSaved = routes.reduce((sum, route) => sum + route.carbonSaving, 0);
+            const avgSafetyScore = routes.reduce((sum, route) => sum + route.safetyScore, 0) / routes.length;
+            const avgAirQuality = routes.reduce((sum, route) => sum + route.airQuality, 0) / routes.length;
+            
+            document.getElementById('carbon-saved').textContent = totalCarbonSaved.toFixed(1);
+            document.getElementById('pollution-avoided').textContent = Math.round(avgAirQuality);
+            document.getElementById('safety-score').textContent = Math.round(avgSafetyScore);
+            document.getElementById('accident-risk').textContent = avgSafetyScore > 80 ? 'Low' : avgSafetyScore > 60 ? 'Medium' : 'High';
+            document.getElementById('total-routes').textContent = routes.length;
+            document.getElementById('avg-improvement').textContent = Math.round((avgSafetyScore - 60) / 40 * 100);
+            
+            document.getElementById('eco-progress').style.width = Math.min(100, (totalCarbonSaved / 8) * 100) + '%';
+            document.getElementById('safety-progress').style.width = avgSafetyScore + '%';
+        }
+    </script>
+</body>
+</html>
